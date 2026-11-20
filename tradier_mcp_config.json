@@ -1,0 +1,116 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schema.json",
+  "name": "ApexTrade Tradier Model Context Protocol Integration",
+  "version": "1.0.0",
+  "description": "Native Model Context Protocol (MCP) server configuration connecting ApexTrade to Tradier's hosted MCP endpoint (https://mcp.tradier.com/mcp) with Gemini API context.",
+  "mcpServers": {
+    "tradier": {
+      "endpoint": "https://mcp.tradier.com/mcp",
+      "transport": "sse",
+      "env": {
+        "API_KEY": "PvInCzfQGjisybA5t8Xd77lUapR1",
+        "PAPER_TRADING": "true",
+        "TRADIER_ACCOUNT_ID": "6YC17358"
+      },
+      "headers": {
+        "API_KEY": "PvInCzfQGjisybA5t8Xd77lUapR1",
+        "PAPER_TRADING": "true",
+        "Accept": "application/json"
+      },
+      "tools": [
+        {
+          "name": "get_user_profile",
+          "description": "Retrieve user profile, account authorization status, and linked accounts from Tradier hosted MCP server.",
+          "parameters": {
+            "type": "object",
+            "properties": {},
+            "required": []
+          }
+        },
+        {
+          "name": "get_account_balances",
+          "description": "Verify sandbox account cash balances, buying power, total equity, and the $50 safety buffer for Tradier paper account 6YC17358.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string",
+                "default": "6YC17358",
+                "description": "Tradier Sandbox Account ID"
+              }
+            },
+            "required": []
+          }
+        },
+        {
+          "name": "get_quotes",
+          "description": "Fetch real-time quotes, bid-ask prices, and spread percentage for target tickers INTC, AMD, and F to check that (Ask - Bid) / Bid < 0.01.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "symbols": {
+                "type": "array",
+                "items": { "type": "string" },
+                "default": ["INTC", "AMD", "F"],
+                "description": "List of stock ticker symbols"
+              }
+            },
+            "required": ["symbols"]
+          }
+        },
+        {
+          "name": "place_equity_order",
+          "description": "Route a market equity order via Tradier Smart Order Router with micro-lot sizing (1 to 3 shares) for account 6YC17358 and reconcile to apextrade.db.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "symbol": {
+                "type": "string",
+                "description": "Stock ticker symbol (INTC, AMD, F)"
+              },
+              "side": {
+                "type": "string",
+                "enum": ["buy", "sell"],
+                "description": "Order side (buy, sell)"
+              },
+              "quantity": {
+                "type": "number",
+                "description": "Number of shares (1 to 3 shares max per micro-lot risk control)"
+              },
+              "type": {
+                "type": "string",
+                "default": "market",
+                "enum": ["market", "limit"]
+              },
+              "duration": {
+                "type": "string",
+                "default": "day"
+              }
+            },
+            "required": ["symbol", "side", "quantity"]
+          }
+        },
+        {
+          "name": "get_orders",
+          "description": "Check order execution statuses (filled, rejected, open) and history for account 6YC17358.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "account_id": {
+                "type": "string",
+                "default": "6YC17358",
+                "description": "Tradier Sandbox Account ID"
+              },
+              "limit": {
+                "type": "integer",
+                "default": 25,
+                "description": "Number of recent orders to inspect"
+              }
+            },
+            "required": []
+          }
+        }
+      ]
+    }
+  }
+}

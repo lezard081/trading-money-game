@@ -1,0 +1,6 @@
+{
+  "name": "ApexTrade - Stock Broker Platform",
+  "description": "Stock broker platform featuring Python live market data ingestion, thread-safe C# $100K portfolio engine with running trade metrics, interactive equity curve visualizer, and asset allocation breakdown.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

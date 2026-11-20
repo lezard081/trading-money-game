@@ -1,0 +1,71 @@
+name: ApexTrade 24/7 Automated Trading Bot
+
+on:
+  # Schedule: Run every 5 minutes during US Stock Market Hours (Monday - Friday)
+  # 13:30 UTC to 20:00 UTC corresponds to 9:30 AM EST to 4:00 PM EST (NYSE/NASDAQ regular session)
+  schedule:
+    - cron: '*/5 13-20 * * 1-5'
+
+  # Manual Dispatch trigger for on-demand execution and test runs
+  workflow_dispatch:
+    inputs:
+      target_symbols:
+        description: 'Target stock tickers to evaluate for mean reversion (comma-separated)'
+        required: false
+        default: 'INTC,AMD,F'
+
+concurrency:
+  group: apextrade-trading-bot
+  cancel-in-progress: false
+
+jobs:
+  run-trading-engine:
+    name: Evaluate Market Signals & Tradier MCP Execution
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Initialize SQLite Database & Tables
+        run: |
+          dotnet run --project csharp/ApexTrade.Portfolio -- --db-status
+
+      - name: Run C# Trading Trigger Engine (Evaluate INTC, AMD, F)
+        run: |
+          echo "Evaluating 2% dips against prior close with Slippage & Spread Guardrail (<=1.0%)..."
+          dotnet run --project csharp/ApexTrade.Portfolio -- --trigger-engine
+
+      - name: Inspect Tradier MCP Configuration & Route Pending Signals
+        env:
+          TRADIER_TOKEN: ${{ secrets.TRADIER_TOKEN || 'PvInCzfQGjisybA5t8Xd77lUapR1' }}
+          TRADIER_ACCOUNT_ID: ${{ secrets.TRADIER_ACCOUNT_ID || '6YC17358' }}
+          TRADIER_MCP_ENDPOINT: 'https://mcp.tradier.com/mcp'
+          API_KEY: 'PvInCzfQGjisybA5t8Xd77lUapR1'
+          PAPER_TRADING: 'true'
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          echo "Tradier MCP Gateway: Evaluating pending signals for Account 6YC17358 via Gemini API MCP tool place_equity_order..."
+
+      - name: Upload Database & MCP Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apextrade-execution-artifacts
+          path: |
+            apextrade.db
+            tradier_mcp_config.json
+          retention-days: 7

@@ -1,0 +1,6 @@
+# ApexTrade — Phase 6 Python Dependencies
+# Tradier REST API, SQLite Bridge, and Real-Time Webhook Notifications
+
+requests>=2.31.0
+python-dotenv>=1.0.0
+urllib3>=2.0.0
